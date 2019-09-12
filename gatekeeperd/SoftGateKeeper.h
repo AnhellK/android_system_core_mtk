@@ -73,11 +73,6 @@ public:
 
     virtual void ComputePasswordSignature(uint8_t *signature, uint32_t signature_length,
             const uint8_t *, uint32_t, const uint8_t *password,
-        *length = SIGNATURE_LENGTH_BYTES;
-    }
-
-    virtual void ComputePasswordSignature(uint8_t *signature, uint32_t signature_length,
-            const uint8_t *, uint32_t, const uint8_t *password,
             uint32_t password_length, salt_t salt) const {
         if (signature == NULL) return;
         crypto_scrypt(password, password_length, reinterpret_cast<uint8_t *>(&salt),
