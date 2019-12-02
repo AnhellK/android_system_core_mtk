@@ -10,7 +10,7 @@ import /init.${ro.hardware}.rc
 import /init.usb.configfs.rc
 import /init.${ro.zygote}.rc
 
-# Include CM's extra init file
+# Include CM's extra init file (cambio)
 import /init.cm.rc
 
 
