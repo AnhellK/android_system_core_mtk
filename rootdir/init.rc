@@ -10,8 +10,9 @@ import /init.${ro.hardware}.rc
 import /init.usb.configfs.rc
 import /init.${ro.zygote}.rc
 
-# Include Lineage extra init file
+# Include CM's extra init file
 import /init.cm.rc
+
 
 on early-init
     # Set init and its forked children's oom_adj.
@@ -143,6 +144,9 @@ on init
     write /proc/sys/net/ipv4/conf/all/accept_redirects 0
     write /proc/sys/net/ipv6/conf/all/accept_redirects 0
 
+    # /proc/net/fib_trie leaks interface IP addresses
+    chmod 0400 /proc/net/fib_trie
+
     # Create cgroup mount points for process groups
     mkdir /dev/cpuctl
     mount cgroup none /dev/cpuctl cpu
@@ -216,7 +220,6 @@ on init
 
     # Create location for fs_mgr to store abbreviated output from filesystem
     # checker programs.
-
     mkdir /dev/fscklogs 0770 root system
 
     # pstore/ramoops previous console log
@@ -246,10 +249,6 @@ on property:sys.boot_from_charger_mode=1
     class_stop charger
     trigger late-init
 
-# Load properties from /system/ + /factory after fs mount.
-on load_system_props_action
-    load_system_props
-
 on load_persist_props_action
     load_persist_props
     start logd
@@ -269,11 +268,6 @@ on late-init
     # while /data is optional.
     trigger fs
     trigger post-fs
-
-    # Load properties from /system/ + /factory after fs mount. Place
-    # this in another action so that the load will be scheduled after the prior
-    # issued fs triggers have completed.
-    trigger load_system_props_action
 
     # Mount fstab in init.{$device}.rc by mount_all with '--late' parameter
     # to only mount entries with 'latemount'. This is needed if '--early' is
@@ -297,6 +291,13 @@ on late-init
 
 
 on post-fs
+    # Load properties from
+    #     /system/build.prop,
+    #     /odm/build.prop,
+    #     /vendor/build.prop and
+    #     /factory/factory.prop
+    load_system_props
+    # start essential services
     start logd
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
@@ -457,7 +458,6 @@ on post-fs-data
     mkdir /data/system 0775 system system
     mkdir /data/system/heapdump 0700 system system
     mkdir /data/system/users 0775 system system
-    mkdir /data/system/theme 0755 system system
 
     mkdir /data/system_de 0770 system system
     mkdir /data/system_ce 0770 system system
@@ -659,23 +659,6 @@ service healthd /sbin/healthd
     seclabel u:r:healthd:s0
     group root system wakelock
 
-service surfaceflinger /system/bin/surfaceflinger
-    class core
-    user root
-    group graphics drmrpc
-    onrestart restart zygote
-
-service drm /system/bin/drmserver
-    class main
-    user drm
-    group drm system inet drmrpc
-
-service media /system/bin/mediaserver
-    class main
-    user root
-    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc mediadrm qcom_diag
-    ioprio rt 4
-
 service console /system/bin/sh
     class core
     console
@@ -698,3 +681,4 @@ service flash_recovery /system/bin/install-recovery.sh
 # update recovery if enabled
 #on property:persist.sys.recovery_update=true
 #    start flash_recovery
+
