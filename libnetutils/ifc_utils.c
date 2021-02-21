@@ -43,10 +43,6 @@
 
 #include "netutils/ifc.h"
 
-#ifdef MTK_HARDWARE
-#include <linux/un.h>
-#endif
-
 #ifdef ANDROID
 #define LOG_TAG "NetUtils"
 #include <cutils/log.h>
